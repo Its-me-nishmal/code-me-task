@@ -32,9 +32,34 @@ export const addStudent = async (req, res) => {
 
 export const getStudents = async (req, res) => {
   try {
+    // Fetch all students
     const students = await Student.find();
-    res.status(200).json(students);
+    
+    // Create a list of students with their attendance
+    const studentWithAttendance = await Promise.all(students.map(async (student) => {
+      // Fetch attendance records for the student
+      const attendanceRecords = await Attendance.find({ student: student._id });
+      
+      // Format attendance records into an object
+      const attendance = {};
+      attendanceRecords.forEach(record => {
+        const date = record.date.toISOString().split('T')[0]; // YYYY-MM-DD format
+        attendance[date] = record.status;
+      });
+      
+      // Return formatted student object
+      return {
+        id: student._id.toString(),
+        rollNumber: student.rollNumber,
+        name: student.name,
+        attendance
+      };
+    }));
+    
+    // Send the response
+    res.status(200).json(studentWithAttendance);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
 };
+
