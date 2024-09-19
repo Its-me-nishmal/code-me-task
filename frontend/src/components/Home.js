@@ -13,11 +13,12 @@ const Home = () => {
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [modalIsOpen, setModalIsOpen] = useState(false);
   const [addStudentModalIsOpen, setAddStudentModalIsOpen] = useState(false);
+  const [reportModalIsOpen, setReportModalIsOpen] = useState(false);
   const [selectedStudent, setSelectedStudent] = useState(null);
   const [selectedDate, setSelectedDate] = useState('');
   const [status, setStatus] = useState('');
   const [newStudentName, setNewStudentName] = useState('');
-  const [newStudentRollNumber, setNewStudentRollNumber] = useState('');
+  const [attendanceReport, setAttendanceReport] = useState(null);
 
   useEffect(() => {
     // Generate dates for the current month
@@ -33,36 +34,21 @@ const Home = () => {
       setDates(datesArray);
     };
 
-    // Load dummy student data
-    const loadDummyStudents = () => {
-      const dummyData = [
-        {
-          id: '1',
-          rollNumber: 1000,
-          name: 'John Doe',
-          attendance: {
-            '2024-09-01': 'Present',
-            '2024-10-05': 'Absent',
-            '2024-09-15': 'Half-Day',
-          },
-        },
-        {
-          id: '2',
-          rollNumber: 1001,
-          name: 'Jane Smith',
-          attendance: {
-            '2024-09-02': 'Present',
-            '2024-09-08': 'Present',
-            '2024-09-20': 'Absent',
-          },
-        },
-      ];
-
-      setStudents(dummyData);
+    const loadStudents = async () => {
+      try {
+        const response = await fetch('https://code-me-task.vercel.app/students'); // Adjust the endpoint as needed
+        if (!response.ok) {
+          throw new Error('Network response was not ok');
+        }
+        const dummyData = await response.json();
+        setStudents(dummyData);
+      } catch (error) {
+        console.error('Failed to fetch students:', error);
+      }
     };
 
     generateMonthDates(currentMonth);
-    loadDummyStudents();
+    loadStudents();
   }, [currentMonth]);
 
   const openModal = (student, date) => {
@@ -75,25 +61,40 @@ const Home = () => {
   const closeModal = () => {
     setModalIsOpen(false);
     setAddStudentModalIsOpen(false);
+    setReportModalIsOpen(false);
   };
 
-  const handleStatusChange = (newStatus) => {
+  const handleStatusChange = async (newStatus) => {
     if (selectedStudent && selectedDate) {
-      // Update the attendance status
-      const updatedStudents = students.map(student => {
-        if (student.id === selectedStudent.id) {
-          return {
-            ...student,
-            attendance: {
-              ...student.attendance,
-              [selectedDate]: newStatus,
-            },
-          };
+      try {
+        const requestBody = {
+          studentId: selectedStudent.id,
+          date: selectedDate,
+          status: newStatus
+        };
+        const response = await fetch('https://code-me-task.vercel.app/attendance/mark', { // Replace with your API endpoint
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(requestBody),
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to update attendance');
         }
-        return student;
-      });
-      setStudents(updatedStudents);
-      closeModal();
+
+        const updatedResponse = await fetch('https://code-me-task.vercel.app/students'); // Adjust the endpoint as needed
+        if (!updatedResponse.ok) {
+          throw new Error('Failed to fetch updated students');
+        }
+        const updatedStudents = await updatedResponse.json();
+        closeModal();
+        setStudents(updatedStudents);
+      } catch (error) {
+        console.error('Error updating attendance:', error);
+        alert('Failed to update attendance status.');  // Show an alert on error
+      }
     }
   };
 
@@ -108,17 +109,35 @@ const Home = () => {
           name: newStudentName
         }),
       });
-  
+
       if (!response.ok) {
         throw new Error('Failed to add student');
       }
-      alert("Added Successfully")
-      const newStudent = await response.json();
-  
-      setStudents([...students, newStudent]);
+
+      const updatedResponse = await fetch('https://code-me-task.vercel.app/students'); // Adjust the endpoint as needed
+      if (!updatedResponse.ok) {
+        throw new Error('Failed to fetch updated students');
+      }
+      const updatedStudents = await updatedResponse.json();
       closeModal();
+      setStudents(updatedStudents);
     } catch (error) {
       alert('Something Wrong!!!')
+    }
+  };
+
+  const fetchAttendanceReport = async (studentId) => {
+    try {
+      const response = await fetch(`https://code-me-task.vercel.app/attendance/report/${studentId}`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch attendance report');
+      }
+      const report = await response.json();
+      setAttendanceReport(report);
+      setReportModalIsOpen(true);
+    } catch (error) {
+      console.error('Error fetching attendance report:', error);
+      alert('Failed to fetch attendance report.');
     }
   };
 
@@ -135,6 +154,15 @@ const Home = () => {
       </div>
     );
   };
+
+  const nameBodyTemplate = (rowData) => (
+    <div
+      onClick={() => fetchAttendanceReport(rowData.id)}
+      style={{ cursor: 'pointer', color: 'blue', textDecoration: 'underline' }}
+    >
+      {rowData.name}
+    </div>
+  );
 
   const handleMonthChange = (direction) => {
     const newMonth = new Date(currentMonth);
@@ -162,7 +190,7 @@ const Home = () => {
 
       <DataTable value={students} responsiveLayout="scroll" className="custom-table">
         <Column field="rollNumber" header="Roll No" sortable className="roll-column"></Column>
-        <Column field="name" header="Name" sortable className="name-column"></Column>
+        <Column field="name" header="Name" sortable body={nameBodyTemplate} className="name-column"></Column>
         
         {/* Generate columns for the current month */}
         {dates.map((date) => (
@@ -200,17 +228,21 @@ const Home = () => {
               onChange={(e) => setNewStudentName(e.target.value)}
             />
           </label>
-          <label>
-            Roll Number:
-            <input
-              type="number"
-              value={newStudentRollNumber}
-              onChange={(e) => setNewStudentRollNumber(e.target.value)}
-            />
-          </label>
         </div>
         <button onClick={handleAddStudent}>Add Student</button>
         <button onClick={closeModal}>Close</button>
+      </Modal>
+
+      {/* Modal for showing attendance report */}
+      <Modal isOpen={reportModalIsOpen} onRequestClose={() => setReportModalIsOpen(false)} contentLabel="Attendance Report">
+        <h2>Attendance Report for {attendanceReport?.studentName}</h2>
+        <div>
+          <p>Present: {attendanceReport?.present || 0}</p>
+          <p>Absent: {attendanceReport?.absent || 0}</p>
+          <p>Half Day: {attendanceReport?.halfDay || 0}</p>
+          <p>Total Days: {attendanceReport?.totalDays || 0}</p>
+        </div>
+        <button onClick={() => setReportModalIsOpen(false)}>Close</button>
       </Modal>
     </div>
   );
