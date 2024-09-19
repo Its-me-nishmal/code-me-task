@@ -1,0 +1,95 @@
+.custom-table .p-datatable-thead > tr > th {
+    border: 1px solid #ccc; /* Border for header columns */
+    padding: 10px;
+    text-align: center;
+}
+
+.custom-table .p-datatable-tbody > tr > td {
+    border: 1px solid #ccc; /* Border for data columns */
+    text-align: center; /* Center align text and icons */
+    padding: 10px;
+}
+
+/* Icon styles */
+.green-icon {
+    color: green;
+}
+
+.red-icon {
+    color: red;
+}
+
+.orange-icon {
+    color: orange;
+}
+
+.gray-icon {
+    color: gray;
+}
+
+/* Modal styling */
+.ReactModal__Overlay {
+    background: rgba(0, 0, 0, 0.5);
+}
+
+.ReactModal__Content {
+    position: relative;
+    margin: auto;
+    padding: 20px;
+    max-width: 500px;
+    background: #fff;
+    border-radius: 4px;
+}
+
+/* Month navigation styling */
+.month-navigation {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.month-navigation button {
+    padding: 10px;
+    border: none;
+    background-color: #007bff;
+    color: white;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.month-navigation span {
+    font-size: 1.2em;
+}
+
+/* Add student button */
+.add-student-button {
+    padding: 10px;
+    border: none;
+    background-color: #28a745;
+    color: white;
+    border-radius: 4px;
+    cursor: pointer;
+    margin-bottom: 20px;
+}
+
+/* Modal form styling */
+label {
+    display: block;
+    margin-bottom: 10px;
+}
+
+input {
+    margin-left: 10px;
+    padding: 5px;
+    border-radius: 4px;
+    border: 1px solid #ccc;
+}
+
+button {
+    margin: 5px;
+}
+
+i {
+    margin-left: 10px;
+}
