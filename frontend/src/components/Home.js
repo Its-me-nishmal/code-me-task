@@ -99,7 +99,7 @@ const Home = () => {
 
   const handleAddStudent = async () => {
     try {
-      const response = await fetch('https://potential-disco-x5wwpr5xgjjrhpjpj-5000.app.github.dev/students/add', { // Replace with your API endpoint
+      const response = await fetch('https://code-me-task.vercel.app/students/add', { // Replace with your API endpoint
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

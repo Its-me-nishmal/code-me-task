@@ -1,24 +1,34 @@
 import Student from '../models/studentModel.js';
+import Attendance from '../models/attendanceModel.js';
 
 export const addStudent = async (req, res) => {
-    try {
-      const { name } = req.body; // No rollNumber in the request body
+  try {
+    const { name } = req.body; // No rollNumber in the request body
   
-      // Fetch the last student entry to get the last roll number
-      const lastStudent = await Student.findOne().sort({ rollNumber: -1 });
-      
-      // Calculate the new roll number
-      const newRollNumber = lastStudent ? lastStudent.rollNumber + 1 : 1000;
+    // Fetch the last student entry to get the last roll number
+    const lastStudent = await Student.findOne().sort({ rollNumber: -1 });
+    
+    // Calculate the new roll number
+    const newRollNumber = lastStudent ? lastStudent.rollNumber + 1 : 1000;
   
-      // Create a new student with the incremented roll number
-      const student = new Student({ name, rollNumber: newRollNumber });
-      await student.save();
-      
-      res.status(201).json(student);
-    } catch (error) {
-      res.status(400).json({ message: error.message });
-    }
-  };
+    // Create a new student with the incremented roll number
+    const student = new Student({ name, rollNumber: newRollNumber });
+    await student.save();
+    
+    // Create an attendance entry for today
+    const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD format
+    const attendance = new Attendance({
+      student: student._id,
+      date: today,
+      status: 'Present'
+    });
+    await attendance.save();
+    
+    res.status(201).json(student);
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+};
 
 export const getStudents = async (req, res) => {
   try {
